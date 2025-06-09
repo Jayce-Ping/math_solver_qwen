@@ -46,7 +46,7 @@ bash run.sh
 
 #### 参数说明
 - `IMAGE_INPUT_DIR`：图片所在目录路径
-- `Query_PATH`：输入 JSONL 文件路径
+- `QUERY_PATH`：输入 JSONL 文件路径
 - `OUPUT_PATH`：输出结果 JSONL 文件路径
 
 ## 输出格式
