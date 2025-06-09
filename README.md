@@ -7,7 +7,7 @@
 
 ### 1. 克隆仓库
 ```shell
-git clone [<仓库地址>](https://github.com/thomaswei-cn/math_solver_qwen.git)
+git clone https://github.com/thomaswei-cn/math_solver_qwen.git
 cd math_solver_qwen
 ```
 
