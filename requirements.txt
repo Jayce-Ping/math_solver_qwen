@@ -1,0 +1,6 @@
+transformers
+accelerate
+torch
+qwen-vl-utils
+tqdm
+torchvision
