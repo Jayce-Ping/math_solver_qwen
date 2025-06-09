@@ -44,10 +44,10 @@ bash build_env.sh
 bash run.sh
 ```
 
-#### 参数说明
-- `IMAGE_INPUT_DIR`：图片所在目录路径
-- `QUERY_PATH`：输入 JSONL 文件路径
-- `OUPUT_PATH`：输出结果 JSONL 文件路径
+#### 环境变量说明
+- `$IMAGE_INPUT_DIR`：图片所在目录路径
+- `$QUERY_PATH`：输入 JSONL 文件路径
+- `$OUPUT_PATH`：输出结果 JSONL 文件路径
 
 ## 输出格式
 每行 JSON 对象包含：
