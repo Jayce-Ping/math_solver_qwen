@@ -52,7 +52,7 @@ bash run.sh
 ## 输出格式
 每行 JSON 对象包含：
 - `image`：原图片文件名  
-- 'tag': 题目类型
+- `tag`: 题目类型
 - `step`：解题思路（LaTeX 格式）
 - `answer`：最终答案  
 
