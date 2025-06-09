@@ -7,8 +7,8 @@
 
 ### 1. 克隆仓库
 ```shell
-git clone <仓库地址>
-cd <仓库目录>
+git clone [<仓库地址>](https://github.com/thomaswei-cn/math_solver_qwen.git)
+cd math_solver_qwen
 ```
 
 ### 2. 创建并激活 Conda 虚拟环境
