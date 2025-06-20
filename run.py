@@ -58,7 +58,7 @@ def load_jsonl(input_file):
     return data
 
 def main(image_dir,input_jsonl, output_jsonl):
-    model, processor = load_model("Qwen/Qwen2.5-VL-3B-Instruct")
+    model, processor = load_model('./model') # 模型必须在当前目录下，如果没有请先下载模型，此处用qwen2.5-vl-3b-instruct模型示例
     input_file = load_jsonl(input_jsonl)
 
 
