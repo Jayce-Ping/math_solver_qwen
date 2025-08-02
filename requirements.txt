@@ -1,6 +1,10 @@
-transformers
 accelerate
 torch
 qwen-vl-utils
-tqdm
 torchvision
+latex2sympy2==1.9.1
+PyYAML==6.0.2
+qwen_vl_utils==0.0.11
+sympy==1.14.0
+tqdm==4.67.1
+transformers==4.53.2

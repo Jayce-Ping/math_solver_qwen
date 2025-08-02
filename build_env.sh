@@ -1,3 +1,9 @@
 #!/bin/bash
 
-echo "build env succeess"
+conda activate pytorch-env
+
+pip install -r requirements.txt
+
+pip install torch torchvision torchaudio
+
+pip install vllm --extra-index-url https://download.pytorch.org/whl/cu126
