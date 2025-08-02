@@ -1,6 +1,6 @@
 conda activate pytorch-env
 
-python run.py \
+python run_vllm.py \
   $IMAGE_INPUT_DIR \
   $QUERY_PATH \
-  $OUTPUT_PATH
+  $OUPUT_PATH

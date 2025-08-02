@@ -10,8 +10,8 @@ default_model_load_kwargs = {
     "model_path": "Qwen/Qwen2.5-VL-3B-Instruct",
     'gpu_memory_utilization': 0.85,
     'max_model_len': 32768,
-    'dtype': 'bfloat16',
-    'device_cnt': 1
+    'device_cnt': 1,
+    "dtype": "auto",
 }
 
 default_inference_kwargs = {
@@ -123,7 +123,7 @@ def calculate_answer(answer):
         
     return None
 
-def format_answer(answer, tag=None):
+def format_answer(answer, tag: str  = "填空题"):
     """
         Remove latex formatting and ensure the answer is in a valid format.
     """
@@ -140,9 +140,10 @@ def format_answer(answer, tag=None):
     # Remove \\(...\\) with ...
     answer = re.sub(r'\\\((.*?)\\\)', r'\1', answer)
 
-    if tag in ['选择题']:
-        # Find the first uppercase letter in the answer
-        match = re.search(r'[A-Z]', answer)
+    if tag == '选择题' or 'choice' in tag.lower():
+        # Find the first uppercase letter with no letter next to it
+        # in range A to D
+        match = re.search(r'\b[A-D]\b', answer)
         if match:
             answer = match.group(0)
         else:

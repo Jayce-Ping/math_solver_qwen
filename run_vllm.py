@@ -1,14 +1,14 @@
-from transformers import AutoProcessor
-from vllm import LLM, SamplingParams
-from qwen_vl_utils import process_vision_info
-from utils import load_jsonl, extract_steps_and_answer, format_answer
-from utils import load_config, default_inference_kwargs, default_model_load_kwargs
 import os
 from tqdm import tqdm
 import json
 import re
 import torch
 import sys
+from transformers import AutoProcessor
+from vllm import LLM, SamplingParams
+from qwen_vl_utils import process_vision_info
+from utils import load_jsonl, extract_steps_and_answer, format_answer
+from utils import load_config, default_inference_kwargs, default_model_load_kwargs
 from prompt import initial_prompt, format_query
 
 def load_model(**kwargs):
