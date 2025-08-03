@@ -3,6 +3,7 @@ max_tokens: 4096
 temperature: 0.7
 top_p: 0.9
 batch_size: 8
+use_tool_calls: true
 
 # Model loading configuration
 model_path: "./models/vision_r1_3b"

@@ -19,6 +19,7 @@ default_inference_kwargs = {
     'temperature': 0.1,
     'top_p': 0.9,
     'batch_size': 4,  # Parallel processing batch size
+    'max_tool_calls': 5,  # Maximum number of tool calls per request
 }
 
 def load_config(config_path = 'config.yaml'):
@@ -184,3 +185,21 @@ def load_jsonl(input_file):
         data = [json.loads(line) for line in f]
 
     return data
+
+
+
+
+def format_chat_history(chat_history):
+    """
+    Format chat history for output.
+    """
+    formatted_history = []
+    for message in chat_history:
+        if isinstance(message['content'], list):
+            content = "\n".join([msg['text'] if 'text' in msg else msg['image'] for msg in message['content']])
+        else:
+            content = message['content']
+        
+        formatted_history.append(f"{message['role']}: {content}")
+    
+    return "\n".join(formatted_history)
