@@ -1,7 +1,8 @@
 accelerate
-torch
+openai
 qwen-vl-utils
-torchvision
+flashinfer-python
+flash-attn
 latex2sympy2==1.9.1
 PyYAML==6.0.2
 qwen_vl_utils==0.0.11

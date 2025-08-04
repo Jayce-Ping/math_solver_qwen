@@ -2,11 +2,12 @@ import os
 import json
 import re
 import yaml
+import base64
 from latex2sympy2 import latex2sympy
 from sympy import N
 
-
 default_model_load_kwargs = {
+    "model_name": "Qwen2.5-VL-3B-Instruct",
     "model_path": "Qwen/Qwen2.5-VL-3B-Instruct",
     'gpu_memory_utilization': 0.85,
     'max_model_len': 32768,
@@ -15,12 +16,38 @@ default_model_load_kwargs = {
 }
 
 default_inference_kwargs = {
-    'max_tokens': 4096,
+    "model_name": "Qwen2.5-VL-3B-Instruct",
+    'max_tokens': 2048,
     'temperature': 0.1,
     'top_p': 0.9,
     'batch_size': 4,  # Parallel processing batch size
     'max_tool_calls': 5,  # Maximum number of tool calls per request
 }
+
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+    
+def get_image_mimetype(extension : str):
+    """
+    Get the image minitype based on the file extension.
+    """
+    ext_to_mimetype = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'bmp': 'image/bmp',
+        'webp': 'image/webp',
+        'tiff': 'image/tiff',
+        'svg': 'image/svg+xml'
+    }
+    if '.' in extension:
+        # Get the last part of the extension
+        extension = extension.split('.')[-1].lower()
+    
+    return ext_to_mimetype.get(extension, 'image/jpeg')  # Default to JPEG if unknown
 
 def load_config(config_path = 'config.yaml'):
     """Load configuration from a YAML file."""

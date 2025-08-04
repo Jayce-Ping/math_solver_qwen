@@ -34,7 +34,7 @@ def load_model(**kwargs):
         tensor_parallel_size=device_cnt,  # Use all available GPUs
         gpu_memory_utilization=gpu_memory_utilization,
         max_model_len=max_model_len,
-        dtype=dtype,
+        dtype=dtype
     )
     processor = AutoProcessor.from_pretrained(model_path)
     return llm, processor

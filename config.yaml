@@ -2,12 +2,12 @@
 max_tokens: 4096
 temperature: 0.7
 top_p: 0.9
-batch_size: 8
+batch_size: 4
 use_tool_calls: true
 
 # Model loading configuration
-model_path: "./models/vision_r1_3b"
-max_model_len: 32768
-gpu_memory_utilization: 0.9
-device_cnt: 2
-dtype: "auto"
+model_path: "models/vision_r1_3b"
+model_name: "vision_r1_3b"
+devices: "-1"  # Use all available devices
+tensor_parallel_size: 4
+dtype: "float16"
