@@ -16,5 +16,7 @@ python run_api.py \
 #   $QUERY_PATH \
 #   $OUPUT_PATH
 
+
+sleep 3
 # Stop the VLLM server
 bash vllm_server/stop_server.sh

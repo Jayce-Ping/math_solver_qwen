@@ -14,7 +14,7 @@ from utils import get_image_mimetype
 import time
 import requests
 
-def check_vllm_health(base_url="http://localhost:8000", timeout=600):
+def build_client(base_url="http://localhost:8000", timeout=600):
     """
     Check if the vLLM server is healthy and ready to accept requests.
     """
@@ -48,8 +48,8 @@ def check_vllm_health(base_url="http://localhost:8000", timeout=600):
             print(f"Available models: {[m['id'] for m in models['data']]}")
             
             # Try a simple test request to ensure the model is actually loaded
-            test_client = OpenAI(base_url=f"{base_url}/v1", api_key="dummy-key")
-            test_response = test_client.chat.completions.create(
+            client = OpenAI(base_url=f"{base_url}/v1", api_key="dummy-key")
+            test_response = client.chat.completions.create(
                 model=models['data'][0]['id'],
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=100,
@@ -58,9 +58,7 @@ def check_vllm_health(base_url="http://localhost:8000", timeout=600):
             
             if test_response.choices[0].message.content:
                 print("vLLM server is fully ready!")
-                # Close the test client
-                del test_client
-                return True
+                return client
             
         except Exception as e:
             print(f"Server check failed: {e}")
@@ -69,15 +67,7 @@ def check_vllm_health(base_url="http://localhost:8000", timeout=600):
         time.sleep(5)
     
     print("Timeout waiting for vLLM server to respond")
-    return False
-
-def load_model(base_url="http://localhost:8000/v1"):
-    # Load local vllm model as openai client
-    client = OpenAI(
-        base_url=base_url,
-        api_key="dummy-key"
-    )
-    return client
+    return None
 
 def run_model(client : OpenAI, messages, **kwargs):
     model_name = kwargs.get('model_name', default_model_load_kwargs['model_name'])
@@ -85,10 +75,12 @@ def run_model(client : OpenAI, messages, **kwargs):
     temperature = kwargs.get('temperature', default_inference_kwargs['temperature'])
     top_p = kwargs.get('top_p', default_inference_kwargs['top_p'])
 
+    timeout=30
+
     completion = client.chat.completions.create(
         model=model_name,
         messages=messages,
-        max_completion_tokens=max_tokens,
+        max_tokens=max_tokens,
         temperature=temperature,
         top_p=top_p
     )
@@ -130,6 +122,85 @@ def inference(client, image_dir, input_data, output_jsonl, **kwargs):
             }
             f_out.write(json.dumps(result) + '\n')
 
+
+def inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **kwargs):
+    
+    max_tool_calls = kwargs.get('max_tool_calls', default_inference_kwargs['max_tool_calls'])
+    max_chat_round = kwargs.get('max_chat_round', 5)
+    tool_call_count = 0
+
+    with open(output_jsonl, 'w', encoding='utf-8') as f_out:
+        for item in tqdm(input_data, desc="Processing items with tool calls"):
+            image_path = os.path.join(image_dir, item['image'])
+            messages = [
+                {
+                    "role": "system",
+                    "content": system_prompt_with_tool_calls
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
+                        {"type": "text", "text": initial_prompt}
+                    ],
+                }
+            ]
+
+            chat_history = messages            
+            for _ in range(max_chat_round):
+                if tool_call_count >= max_tool_calls:
+                    break
+
+                response = run_model(client, chat_history, **kwargs)
+                chat_history.append({
+                    "role": "assistant",
+                    "content": response
+                })
+
+                # Extract tool calls from the response and execute them
+                match_tool_calls = re.finditer(r'<tool_call>(.*?)</tool_call>', response)
+                for match_tool_call in match_tool_calls:
+                    tool_call_str = match_tool_call.group(1)
+                    tool_call_res = execute_tool_call_str(tool_call_str)
+                    if 'result' in tool_call_res:
+                        chat_history.append({
+                            "role": "assistant",
+                            "content": f"{tool_call_str} returned: {tool_call_res['result']}"
+                        })
+                    else:
+                        # An error occurred in tool execution
+                        chat_history.append({
+                            "role": "assistant",
+                            "content": f"Error executing tool {tool_call_str}: {tool_call_res['error']}"
+                        })
+                    
+                    tool_call_count += 1
+                    if tool_call_count >= max_tool_calls:
+                        break
+
+                # Check if the response contains the final answer
+                steps, answer = extract_steps_and_answer(response)
+                if len(answer) > 0:
+                    break
+        
+            # Extract steps and answer from the final response
+            final_response = chat_history[-1]['content']
+            steps, answer = extract_steps_and_answer(final_response)
+            formatted_answer = format_answer(answer, item.get('tag', None))
+
+            result = {
+                'image': item['image'],
+                'answer': formatted_answer,
+                'raw_answer': answer,
+                'steps': steps,
+                'output': format_chat_history(chat_history)
+            }
+            
+            # Write to output JSONL file
+            with open(output_jsonl, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(result, ensure_ascii=False) + '\n')
+
+
 def main(image_dir, input_jsonl, output_jsonl):
     config = load_config()
     model_load_kwargs = {
@@ -141,16 +212,12 @@ def main(image_dir, input_jsonl, output_jsonl):
 
     use_tool_calls = config.get('use_tool_calls', False)
 
-    # Check if the vLLM server is healthy
-    if not check_vllm_health():
+    print("Creating OpenAI client...")
+    client = build_client()
+    if client is None:
         # Raise an error or exit if the server is not healthy
         raise RuntimeError("vLLM server is not healthy or ready to accept requests within the timeout period.")
 
-    print("vLLM server is healthy and ready to accept requests.")
-
-    print("Creating OpenAI client...")
-    # Load the model
-    client = load_model()
     print("OpenAI client created successfully.")
 
     # Load the input JSONL file
@@ -165,7 +232,7 @@ def main(image_dir, input_jsonl, output_jsonl):
         inference(client, image_dir, input_data, output_jsonl, **inference_kwargs)
     else:
         # Perform batch inference with tool calls
-        inference(client, image_dir, input_data, output_jsonl, **inference_kwargs)
+        inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **inference_kwargs)
 
 
 

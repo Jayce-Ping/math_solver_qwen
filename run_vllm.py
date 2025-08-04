@@ -99,7 +99,7 @@ def run_model_with_tool_calls(model, processor, messages, **kwargs):
         })
 
         # Extract tool calls from the response and execute them
-        match_tool_calls = re.finditer(r'<tool>(.*?)</tool>', response)
+        match_tool_calls = re.finditer(r'<tool_call>(.*?)</tool_call>', response)
         for match_tool_call in match_tool_calls:
             tool_call_str = match_tool_call.group(1)
             tool_call_res = execute_tool_call_str(tool_call_str)

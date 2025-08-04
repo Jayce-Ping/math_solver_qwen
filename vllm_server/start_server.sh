@@ -1,11 +1,14 @@
 #!/bin/bash
 
+# Get the current time in the format "+%Y%m%d_%H%M%S"
+CURRENT_TIME=$(date '+%Y%m%d_%H%M%S')
+
 # Get the directory of the current script
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # Define log and PID files according to the script directory
-LOG_FILE="$SCRIPT_DIR/vllm_server.log"
-PID_FILE="$SCRIPT_DIR/vllm_server.pid"
+LOG_FILE="$SCRIPT_DIR/vllm_server_$CURRENT_TIME.log"
+PID_FILE="$SCRIPT_DIR/vllm_server_$CURRENT_TIME.pid"
 
 # Get command line arguments
 MODEL_NAME=${1}
