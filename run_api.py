@@ -14,7 +14,7 @@ from utils import get_image_mimetype
 import time
 import requests
 
-def build_client(base_url="http://localhost:8000", timeout=600):
+def build_client(model_name, base_url="http://localhost:8000", timeout=600):
     """
     Check if the vLLM server is healthy and ready to accept requests.
     """
@@ -32,25 +32,10 @@ def build_client(base_url="http://localhost:8000", timeout=600):
                 time.sleep(5)
                 continue
             
-            # Try to get the list of models
-            response = requests.get(f"{base_url}/v1/models", timeout=5)
-            if response.status_code != 200:
-                print(f"Models endpoint failed with status: {response.status_code}")
-                time.sleep(5)
-                continue
-                
-            models = response.json()
-            if not models.get('data') or len(models['data']) == 0:
-                print("No models available yet")
-                time.sleep(5)
-                continue
-            
-            print(f"Available models: {[m['id'] for m in models['data']]}")
-            
             # Try a simple test request to ensure the model is actually loaded
             client = OpenAI(base_url=f"{base_url}/v1", api_key="dummy-key")
             test_response = client.chat.completions.create(
-                model=models['data'][0]['id'],
+                model=model_name,
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=100,
                 timeout=5
@@ -104,7 +89,7 @@ def inference(client, image_dir, input_data, output_jsonl, **kwargs):
                     "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
-                        {"type": "text", "text": initial_prompt}
+                        # {"type": "text", "text": ""}
                     ],
                 }
             ]
@@ -125,8 +110,8 @@ def inference(client, image_dir, input_data, output_jsonl, **kwargs):
 
 def inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **kwargs):
     
-    max_tool_calls = kwargs.get('max_tool_calls', default_inference_kwargs['max_tool_calls'])
-    max_chat_round = kwargs.get('max_chat_round', 5)
+    max_tool_calls = kwargs.get('max_tool_calls', 3)
+    max_chat_round = kwargs.get('max_chat_round', 3)
     tool_call_count = 0
 
     with open(output_jsonl, 'w', encoding='utf-8') as f_out:
@@ -193,7 +178,7 @@ def inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **kwa
                 'answer': formatted_answer,
                 'raw_answer': answer,
                 'steps': steps,
-                'output': format_chat_history(chat_history)
+                'output': format_chat_history(chat_history, roles=['assistant'])
             }
             
             # Write to output JSONL file
@@ -213,10 +198,10 @@ def main(image_dir, input_jsonl, output_jsonl):
     use_tool_calls = config.get('use_tool_calls', False)
 
     print("Creating OpenAI client...")
-    client = build_client()
+    client = build_client(model_name=model_load_kwargs['model_name'])
     if client is None:
-        # Raise an error or exit if the server is not healthy
-        raise RuntimeError("vLLM server is not healthy or ready to accept requests within the timeout period.")
+        # Raise an error
+        raise RuntimeError("Failed to create OpenAI client to connect to vLLM server in time.")
 
     print("OpenAI client created successfully.")
 

@@ -13,5 +13,6 @@ system_prompt_with_tool_calls = f"""{initial_system_prompt}
 You have access to the following tools:
 {json.dumps(tools_info, indent=2)}
 
-Please use <tool_call>tool_name, arg1, arg2, ...</tool_call> to call a tool. For example, if you want to call the evaluate_expression tool with the expression '2 + 2', you would write: <tool>evaluate_expression, 2 + 2</tool>.
+Please use <tool_call>tool_name, arg1, arg2, ...</tool_call> to call a tool.
+For example, if you want to call the evaluate_expression tool with the expression '2 + 2', you would write: <tool_call>evaluate_expression, 2 + 2</tool_call>.
 """

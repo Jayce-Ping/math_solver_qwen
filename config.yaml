@@ -3,11 +3,14 @@ max_tokens: 4096
 temperature: 0.7
 top_p: 0.9
 batch_size: 4
-use_tool_calls: true
+use_tool_calls: false
 
 # Model loading configuration
 model_path: "/data/pbw/IKCEST2025/models/vision_r1_3b"
 model_name: "vision_r1_3b"
-devices: "4,5,6,7"  # Use all available devices
-tensor_parallel_size: 4
+# model_path: "/data/yyf/model/Qwen2.5-VL-3B-Instruct"
+# model_name: "Qwen2.5-VL-3B-Instruct"
+devices: "6,7"  # Use all available devices
+tensor_parallel_size: 2
+gpu_memory_utilization: 0.9
 dtype: "auto"

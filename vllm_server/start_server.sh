@@ -14,14 +14,15 @@ PID_FILE="$SCRIPT_DIR/vllm_server_$CURRENT_TIME.pid"
 MODEL_NAME=${1}
 MODEL_PATH=${2}
 TENSOR_PARALLEL_SIZE=${3}
-DTYPE=${4:-"auto"}  # Default to "auto" if not provided
+GPU_MEMORY_UTILIZATION=${4:-0.9}  # Default to 0.9 if not provided
+DTYPE=${5:-"auto"}  # Default to "auto" if not provided
 
 # Start the VLLM server and redirect output to the log file
 nohup python -m vllm.entrypoints.openai.api_server \
     --model $MODEL_PATH \
     --host 0.0.0.0 \
     --port 8000 \
-    --gpu-memory-utilization 0.9 \
+    --gpu-memory-utilization $GPU_MEMORY_UTILIZATION \
     --tensor-parallel-size $TENSOR_PARALLEL_SIZE \
     --trust-remote-code \
     --served-model-name $MODEL_NAME \

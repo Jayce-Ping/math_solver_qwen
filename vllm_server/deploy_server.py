@@ -9,7 +9,7 @@ def load_config(config_path='config.yaml'):
         config = yaml.safe_load(file)
     return config
 
-def run_start_command(model_name, model_path, devices, tensor_parallel_size, dtype):
+def run_start_command(model_name, model_path, devices, tensor_parallel_size, gpu_memory_utilization, dtype):
     # Set CUDA_VISIBLE_DEVICES environment variable as needed
     if devices != '-1':
         os.environ['CUDA_VISIBLE_DEVICES'] = devices
@@ -21,6 +21,7 @@ def run_start_command(model_name, model_path, devices, tensor_parallel_size, dty
         model_name,
         model_path,
         str(tensor_parallel_size),
+        str(gpu_memory_utilization),
         dtype
     ]
     # Execute the command
@@ -33,7 +34,8 @@ if __name__ == "__main__":
     model_path = config['model_path']
     devices = config.get('devices', '-1')
     tensor_parallel_size = config.get('tensor_parallel_size', 1)
+    gpu_memory_utilization = config.get('gpu_memory_utilization', 0.9)
     dtype = config.get('dtype', 'auto')
 
     # Run the start command
-    run_start_command(model_name, model_path, devices, tensor_parallel_size, dtype)
+    run_start_command(model_name, model_path, devices, tensor_parallel_size, gpu_memory_utilization, dtype)
