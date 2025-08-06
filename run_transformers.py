@@ -4,7 +4,7 @@ import json
 import re
 import torch
 import sys
-from prompt import initial_prompt, format_query
+from prompt import initial_prompt, format_query, format_prompt
 from utils import load_jsonl, extract_steps_and_answer, format_answer
 from utils import default_inference_kwargs, default_model_load_kwargs,load_config
 from qwen_vl_utils import process_vision_info
@@ -116,7 +116,7 @@ def main(image_dir,input_jsonl, output_jsonl):
         messages_list = []
         for obj in batch:
             image_path = os.path.join(image_dir, obj['image'])
-            prompt = obj.get('query', initial_prompt)
+            prompt = obj.get('query', format_prompt(obj['tag']))
             messages = [
                 {
                     "role": "user",

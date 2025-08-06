@@ -8,7 +8,7 @@ from transformers import AutoProcessor
 from openai import OpenAI
 from utils import load_jsonl, extract_steps_and_answer, format_answer, format_chat_history, encode_image
 from utils import load_config, default_inference_kwargs, default_model_load_kwargs
-from prompt import initial_prompt, initial_system_prompt, system_prompt_with_tool_calls
+from prompt import initial_prompt, initial_system_prompt, system_prompt_with_tool_calls, format_prompt
 from math_tools import execute_tool_call, execute_tool_call_str
 from utils import get_image_mimetype
 import time
@@ -80,6 +80,7 @@ def inference(client, image_dir, input_data, output_jsonl, **kwargs):
     for item in tqdm(input_data, desc="Processing items"):
         image_path = os.path.join(image_dir, item['image'])
         # image_mimetype = get_image_mimetype(item['image'])
+        tag = item.get('tag')
         messages = [
             {
                 "role": "system",
@@ -89,7 +90,7 @@ def inference(client, image_dir, input_data, output_jsonl, **kwargs):
                 "role": "user",
                 "content": [
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
-                    # {"type": "text", "text": ""}
+                    {"type": "text", "text": format_prompt(tag)}
                 ],
             }
         ]
@@ -100,6 +101,7 @@ def inference(client, image_dir, input_data, output_jsonl, **kwargs):
 
         result = {
             'image': item['image'],
+            'tag': tag,
             'answer': formatted_answer,
             'raw_answer': answer,
             'steps': steps,
@@ -118,6 +120,7 @@ def inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **kwa
 
     for item in tqdm(input_data, desc="Processing items with tool calls"):
         image_path = os.path.join(image_dir, item['image'])
+        tag = item['tag']
         messages = [
             {
                 "role": "system",
@@ -127,7 +130,7 @@ def inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **kwa
                 "role": "user",
                 "content": [
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
-                    {"type": "text", "text": initial_prompt}
+                    {"type": "text", "text": format_prompt(tag)}
                 ],
             }
         ]
@@ -176,6 +179,7 @@ def inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **kwa
 
         result = {
             'image': item['image'],
+            'tag': item['tag'],
             'answer': formatted_answer,
             'raw_answer': answer,
             'steps': steps,

@@ -6,10 +6,10 @@ batch_size: 4
 use_tool_calls: false
 
 # Model loading configuration
-# model_path: "/data/pbw/IKCEST2025/models/vision_r1_3b"
-# model_name: "vision_r1_3b"
-model_path: "./models/math_vision_3b"
-model_name: "math_vision_3b"
+model_path: "./models/vision_r1_3b"
+model_name: "vision_r1_3b"
+# model_path: "./models/math_vision_3b"
+# model_name: "math_vision_3b"
 # model_path: "/data/yyf/model/Qwen2.5-VL-3B-Instruct"
 # model_name: "Qwen2.5-VL-3B-Instruct"
 devices: "-1"  # Use all available devices

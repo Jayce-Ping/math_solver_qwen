@@ -9,7 +9,7 @@ from vllm import LLM, SamplingParams
 from qwen_vl_utils import process_vision_info
 from utils import load_jsonl, extract_steps_and_answer, format_answer, format_chat_history
 from utils import load_config, default_inference_kwargs, default_model_load_kwargs
-from prompt import initial_prompt, initial_system_prompt, system_prompt_with_tool_calls
+from prompt import initial_prompt, initial_system_prompt, system_prompt_with_tool_calls, format_prompt
 from math_tools import execute_tool_call, execute_tool_call_str
 
 def load_model(**kwargs):
@@ -152,7 +152,7 @@ def batch_inference(model, processor, image_dir, input_data, output_jsonl, **inf
                     "role": "user",
                     "content": [
                         {"type": "image", "image": image_path},
-                        {"type": "text", "text": initial_prompt}
+                        {"type": "text", "text": format_prompt(obj['tag'])}
                     ],
                 }
             ]
@@ -192,7 +192,7 @@ def batch_inference_with_tool_calls(model, processor, image_dir, input_data, out
                 "role": "user",
                 "content": [
                     {"type": "image", "image": image_path},
-                    {"type": "text", "text": initial_prompt}
+                    {"type": "text", "text": format_prompt(obj['tag'])}
                 ],
             }
         ]
