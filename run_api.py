@@ -76,35 +76,37 @@ def inference(client, image_dir, input_data, output_jsonl, **kwargs):
     """
     Perform inference on the input data and save results to output JSONL file.
     """
-    with open(output_jsonl, 'w', encoding='utf-8') as f_out:
-        for item in tqdm(input_data, desc="Processing items"):
-            image_path = os.path.join(image_dir, item['image'])
-            # image_mimetype = get_image_mimetype(item['image'])
-            messages = [
-                {
-                    "role": "system",
-                    "content": initial_system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
-                        # {"type": "text", "text": ""}
-                    ],
-                }
-            ]
 
-            response = run_model(client, messages, **kwargs)
-            steps, answer = extract_steps_and_answer(response)
-            formatted_answer = format_answer(answer, item.get('tag', None))
-
-            result = {
-                'image': item['image'],
-                'answer': formatted_answer,
-                'raw_answer': answer,
-                'steps': steps,
-                'output': response
+    for item in tqdm(input_data, desc="Processing items"):
+        image_path = os.path.join(image_dir, item['image'])
+        # image_mimetype = get_image_mimetype(item['image'])
+        messages = [
+            {
+                "role": "system",
+                "content": initial_system_prompt
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
+                    # {"type": "text", "text": ""}
+                ],
             }
+        ]
+
+        response = run_model(client, messages, **kwargs)
+        steps, answer = extract_steps_and_answer(response)
+        formatted_answer = format_answer(answer, item.get('tag', None))
+
+        result = {
+            'image': item['image'],
+            'answer': formatted_answer,
+            'raw_answer': answer,
+            'steps': steps,
+            'output': response
+        }
+        
+        with open(output_jsonl, 'a', encoding='utf-8') as f_out:
             f_out.write(json.dumps(result) + '\n')
 
 
@@ -114,76 +116,75 @@ def inference_with_tool_calls(client, image_dir, input_data, output_jsonl, **kwa
     max_chat_round = kwargs.get('max_chat_round', 3)
     tool_call_count = 0
 
-    with open(output_jsonl, 'w', encoding='utf-8') as f_out:
-        for item in tqdm(input_data, desc="Processing items with tool calls"):
-            image_path = os.path.join(image_dir, item['image'])
-            messages = [
-                {
-                    "role": "system",
-                    "content": system_prompt_with_tool_calls
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
-                        {"type": "text", "text": initial_prompt}
-                    ],
-                }
-            ]
+    for item in tqdm(input_data, desc="Processing items with tool calls"):
+        image_path = os.path.join(image_dir, item['image'])
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt_with_tool_calls
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_image(image_path)}"}},
+                    {"type": "text", "text": initial_prompt}
+                ],
+            }
+        ]
 
-            chat_history = messages            
-            for _ in range(max_chat_round):
+        chat_history = messages            
+        for _ in range(max_chat_round):
+            if tool_call_count >= max_tool_calls:
+                break
+
+            response = run_model(client, chat_history, **kwargs)
+            chat_history.append({
+                "role": "assistant",
+                "content": response
+            })
+
+            # Extract tool calls from the response and execute them
+            match_tool_calls = re.finditer(r'<tool_call>(.*?)</tool_call>', response)
+            for match_tool_call in match_tool_calls:
+                tool_call_str = match_tool_call.group(1)
+                tool_call_res = execute_tool_call_str(tool_call_str)
+                if 'result' in tool_call_res:
+                    chat_history.append({
+                        "role": "assistant",
+                        "content": f"{tool_call_str} returned: {tool_call_res['result']}"
+                    })
+                else:
+                    # An error occurred in tool execution
+                    chat_history.append({
+                        "role": "assistant",
+                        "content": f"Error executing tool {tool_call_str}: {tool_call_res['error']}"
+                    })
+                
+                tool_call_count += 1
                 if tool_call_count >= max_tool_calls:
                     break
 
-                response = run_model(client, chat_history, **kwargs)
-                chat_history.append({
-                    "role": "assistant",
-                    "content": response
-                })
+            # Check if the response contains the final answer
+            steps, answer = extract_steps_and_answer(response)
+            if len(answer) > 0:
+                break
+    
+        # Extract steps and answer from the final response
+        final_response = chat_history[-1]['content']
+        steps, answer = extract_steps_and_answer(final_response)
+        formatted_answer = format_answer(answer, item.get('tag', None))
 
-                # Extract tool calls from the response and execute them
-                match_tool_calls = re.finditer(r'<tool_call>(.*?)</tool_call>', response)
-                for match_tool_call in match_tool_calls:
-                    tool_call_str = match_tool_call.group(1)
-                    tool_call_res = execute_tool_call_str(tool_call_str)
-                    if 'result' in tool_call_res:
-                        chat_history.append({
-                            "role": "assistant",
-                            "content": f"{tool_call_str} returned: {tool_call_res['result']}"
-                        })
-                    else:
-                        # An error occurred in tool execution
-                        chat_history.append({
-                            "role": "assistant",
-                            "content": f"Error executing tool {tool_call_str}: {tool_call_res['error']}"
-                        })
-                    
-                    tool_call_count += 1
-                    if tool_call_count >= max_tool_calls:
-                        break
-
-                # Check if the response contains the final answer
-                steps, answer = extract_steps_and_answer(response)
-                if len(answer) > 0:
-                    break
+        result = {
+            'image': item['image'],
+            'answer': formatted_answer,
+            'raw_answer': answer,
+            'steps': steps,
+            'output': format_chat_history(chat_history, roles=['assistant'])
+        }
         
-            # Extract steps and answer from the final response
-            final_response = chat_history[-1]['content']
-            steps, answer = extract_steps_and_answer(final_response)
-            formatted_answer = format_answer(answer, item.get('tag', None))
-
-            result = {
-                'image': item['image'],
-                'answer': formatted_answer,
-                'raw_answer': answer,
-                'steps': steps,
-                'output': format_chat_history(chat_history, roles=['assistant'])
-            }
-            
-            # Write to output JSONL file
-            with open(output_jsonl, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(result, ensure_ascii=False) + '\n')
+        # Write to output JSONL file
+        with open(output_jsonl, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(result, ensure_ascii=False) + '\n')
 
 
 def main(image_dir, input_jsonl, output_jsonl):

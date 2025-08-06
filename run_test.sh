@@ -3,8 +3,8 @@
 # Start the VLLM server
 python vllm_server/deploy_server.py
 
-# Sleep for 60 seconds to allow the server to start
-sleep 60
+# Sleep for 90 seconds to allow the server to start
+sleep 90
 
 python run_api.py \
   ../math_solver_qwen_data/sample_data \
